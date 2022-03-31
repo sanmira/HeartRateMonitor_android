@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">TestApplication</string>
+    <string name="title_home">Home</string>
+    <string name="title_measurement">Measurement</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_camera">Camera</string>
+    <string name="torch_button">Button</string>
+    <string name="camera_button">Start Measure</string>
+    <string name="preview_area" />
+</resources>
