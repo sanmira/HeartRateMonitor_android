@@ -18,6 +18,10 @@ public class BeatProgress {
         beatProgressBar.setMax(5000);
     }
 
+    public void setMax(int value) {
+        beatProgressBar.setMax(value);
+    }
+
     public void setIndeterminateMode(boolean indeterminate) {
         beatProgressBar.setIndeterminate(indeterminate);
     }

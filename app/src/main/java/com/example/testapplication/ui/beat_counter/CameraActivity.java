@@ -2,10 +2,12 @@ package com.example.testapplication.ui.beat_counter;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.hardware.camera2.CameraCharacteristics;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 
@@ -64,9 +66,7 @@ public class CameraActivity extends AppCompatActivity {
     private Camera camera;
     private YUVtoRGB imgTranslator;
 
-    private CountDownTimer cTimer = null;
     private Vibrator vibrator;
-    private TextView heartBeatIndicator;
 
     private BeatPlot beatPlot;
     private BeatProgress beatProgress;
@@ -88,7 +88,6 @@ public class CameraActivity extends AppCompatActivity {
         final ToggleButton button = findViewById(R.id.torch_button);
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        heartBeatIndicator = findViewById(R.id.bps_text);
 
         button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -213,51 +212,74 @@ public class CameraActivity extends AppCompatActivity {
         Log.e(TAG, "Focus distance: " + discoveredMinFocusDistance);
     }
 
-    void resetBeatIndicator() {
-        heartBeatIndicator.setText("...");
-    }
-
-    void updateBeatIndicator(int value) {
-        String stringToDisplay = Integer.toString(value).concat(" bpm");
-        heartBeatIndicator.setText(stringToDisplay);
-    }
-
     private enum TimerState {
         TIMER_IDLE,
         TIMER_RUNNING,
         TIMER_FINISHED
     }
 
-    TimerState timerState = TimerState.TIMER_IDLE;
-    int timerProgress = 0;
-    int timerIterations = 1;
+    // idle timer
 
-    void startTimer() {
-        cTimer = new CountDownTimer(5000, 100) {
+    private CountDownTimer idleTimer = null;
+    private TimerState idleTimerState = TimerState.TIMER_IDLE;
+    private int idleTimerProgress = 0;
+    private int idleTimerTimeout = 5000;
+    private int idleTimerCountInterval = 100;
+
+    private void startIdleTimer() {
+        idleTimer = new CountDownTimer(idleTimerTimeout, idleTimerCountInterval) {
             public void onTick(long millisUntilFinished) {
-                timerProgress = (5000 - (int) millisUntilFinished);
+                idleTimerProgress = (idleTimerTimeout - (int) millisUntilFinished);
 //                Log.e(TAG, "seconds remaining: " + millisUntilFinished / 1000);
             }
             public void onFinish() {
 //                Log.e(TAG, "Count finished");
-                timerProgress = 0;
-                timerState = TimerState.TIMER_FINISHED;
+                idleTimerProgress = 0;
+                idleTimerState = TimerState.TIMER_FINISHED;
             }
         };
-        timerState = TimerState.TIMER_RUNNING;
-        cTimer.start();
+        idleTimerState = TimerState.TIMER_RUNNING;
+        idleTimer.start();
     }
 
-    void stopTimer() {
-        cTimer.cancel();
+    void stopIdleTimer() {
+        idleTimer.cancel();
+    }
+
+    // measurement timer
+
+    private CountDownTimer measurementTimer = null;
+    private TimerState measurementTimerState = TimerState.TIMER_IDLE;
+    private int measurementTimerProgress = 0;
+    private int measurementTimerTimeout = 30000;
+    private int measurementTimerCountInterval = 100;
+
+    private void startMeasurementTimer() {
+        measurementTimer = new CountDownTimer(measurementTimerTimeout, measurementTimerCountInterval) {
+            public void onTick(long millisUntilFinished) {
+                measurementTimerProgress = (measurementTimerTimeout - (int) millisUntilFinished);
+//                Log.e(TAG, "seconds remaining: " + millisUntilFinished / 1000);
+            }
+            public void onFinish() {
+//                Log.e(TAG, "Count finished");
+                measurementTimerProgress = 0;
+                measurementTimerState = TimerState.TIMER_FINISHED;
+            }
+        };
+        measurementTimerState = TimerState.TIMER_RUNNING;
+        measurementTimer.start();
+    }
+
+    void stopMeasurementTimer() {
+        measurementTimer.cancel();
     }
 
     private ArrayList<Float> pixelData = new ArrayList<Float>();
 
-    private void analyzeData() {
+    private int analyzeData() {
         ArrayList<Float> pixelSmoothData = new ArrayList<Float>();
 
-        Log.e(TAG, "iteration: " + timerIterations +" values: " + pixelData.toString());
+        Log.e(TAG, "Values: " + pixelData.toString());
 
         int window_size = 7;
         float sum = 0;
@@ -269,7 +291,7 @@ public class CameraActivity extends AppCompatActivity {
             sum /= window_size;
             pixelSmoothData.add(sum);
         }
-        Log.e(TAG, "iteration: " + timerIterations +" smooth values: " + pixelSmoothData.toString());
+        Log.e(TAG, "Smooth values: " + pixelSmoothData.toString());
 
         int minimums = 0;
         int i = 0;
@@ -283,12 +305,12 @@ public class CameraActivity extends AppCompatActivity {
         }
         Log.e(TAG, "Minimums: " + minimums);
 
-        float value = ((float) minimums / (timerIterations * 5)) * 60;
+        float value = ((float) minimums / (measurementTimerTimeout / 1000)) * 60;
         Log.e(TAG, "Value: " + (int) value);
 //        Log.e(TAG, "Orig number: " + pixelData.size());
 //        Log.e(TAG, "Smooth number: " + pixelSmoothData.size());
 
-        updateBeatIndicator((int) value);
+        return (int) value;
     }
 
     private void processData(float redMean, int result) {
@@ -296,7 +318,7 @@ public class CameraActivity extends AppCompatActivity {
             case IDLE:
 //                Log.e(TAG, "IDLE");
                 if (result == 1) {
-                    startTimer();
+                    startIdleTimer();
                     vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
                     state = AppState.THRESHOLD_CHECK;
                 }
@@ -304,47 +326,47 @@ public class CameraActivity extends AppCompatActivity {
             case THRESHOLD_CHECK:
 //                Log.e(TAG, "THRESHOLD_CHECK");
                 if (result != 1) {
-                    stopTimer();
+                    stopIdleTimer();
                     beatProgress.setProgress(0);
                     state = AppState.IDLE;
                     break;
                 }
-                if (timerState == TimerState.TIMER_FINISHED) {
+                if (idleTimerState == TimerState.TIMER_FINISHED) {
                     state = AppState.COLLECT_DATA;
                     vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE));
-                    beatProgress.setIndeterminateMode(true);
-                    startTimer();
+                    beatProgress.setProgress(0);
+                    beatProgress.setMax(measurementTimerTimeout);
+                    startMeasurementTimer();
                 } else {
-                    beatProgress.setProgress(timerProgress);
+                    beatProgress.setProgress(idleTimerProgress);
                 }
                 break;
             case COLLECT_DATA:
 //                Log.e(TAG, "COLLECT_DATA");
                 if (result != 1) {
-                    stopTimer();
+                    stopMeasurementTimer();
                     beatPlot.clearGraph();
-                    beatProgress.setIndeterminateMode(false);
                     beatProgress.setProgress(0);
-                    resetBeatIndicator();
-                    timerIterations = 1;
                     pixelData.clear();
+                    beatProgress.setMax(idleTimerTimeout);
                     state = AppState.IDLE;
                     break;
                 }
-                if (timerState == TimerState.TIMER_FINISHED) {
-                    if (timerIterations < 12) {
-                        analyzeData();
-                        timerIterations += 1;
-                        pixelData.add(redMean);
-                    } else {
-                        analyzeData();
-                        timerIterations = 1;
-                        pixelData.clear();
-                    }
-                    startTimer();
+                if (measurementTimerState == TimerState.TIMER_FINISHED) {
+                    int value = analyzeData();
+                    pixelData.clear();
+                    beatProgress.setProgress(0);
+                    measurementTimerState = TimerState.TIMER_IDLE;
+                    Intent data = new Intent();
+//---set the data to pass back---
+                    data.putExtra("measurement_result", value);
+                    setResult(RESULT_OK, data);
+//---close the activity---
+                    finish();
                 } else {
                     pixelData.add(redMean);
                     beatPlot.addEntry(redMean);
+                    beatProgress.setProgress(measurementTimerProgress);
                 }
                 break;
             default:
