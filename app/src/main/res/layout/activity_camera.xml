@@ -34,11 +34,8 @@
 
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/beat_chart"
-        android:layout_width="0dp"
-        android:layout_height="100dp"
-        android:layout_marginStart="50dp"
-        android:layout_marginTop="50dp"
-        android:layout_marginEnd="50dp"
+        android:layout_width="425dp"
+        android:layout_height="157dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

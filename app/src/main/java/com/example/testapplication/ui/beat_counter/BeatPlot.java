@@ -64,7 +64,7 @@ public class BeatPlot {
         LineDataSet set = new LineDataSet(null, "Dynamic Data");
         set.setDrawValues(false);
         set.setAxisDependency(YAxis.AxisDependency.RIGHT);
-        set.setLineWidth(3f);
+        set.setLineWidth(5f);
         set.setColor(Color.RED);
         set.setHighlightEnabled(false);
         set.setDrawValues(false);
@@ -78,7 +78,7 @@ public class BeatPlot {
         lineChart.clearValues();
     }
 
-    public void addEntry(float value) {
+    public void addEntry(double value) {
         LineData data = lineChart.getData();
 
         if (data != null) {
@@ -91,12 +91,11 @@ public class BeatPlot {
                 data.addDataSet(set);
             }
 
-//            data.addEntry(new Entry(set.getEntryCount(), (float) (Math.random() * 80) + 10f), 0);
-            data.addEntry(new Entry(set.getEntryCount(), value), 0);
-            if (data.getEntryCount() > 70) {
+            data.addEntry(new Entry(set.getEntryCount(), (float)value), 0);
+            if (data.getEntryCount() > 150) {
                 set.removeFirst();
                 // change Indexes - move to beginning by 1
-                for (int i = 1; i < 70; i++) {
+                for (int i = 1; i < 150; i++) {
                     Entry entry = set.getEntryForIndex(i);
                     entry.setX(entry.getX() - 1);
                 }
@@ -107,8 +106,8 @@ public class BeatPlot {
             lineChart.notifyDataSetChanged();
 
             // limit the number of visible entries
-            lineChart.setVisibleXRangeMaximum(70);
-            lineChart.setVisibleYRangeMaximum(150, YAxis.AxisDependency.LEFT);
+            lineChart.setVisibleXRangeMaximum(150);
+            //lineChart.setVisibleYRangeMaximum(150, YAxis.AxisDependency.LEFT);
             // mChart.setVisibleYRange(30, AxisDependency.LEFT);
 
             // move to the latest entry

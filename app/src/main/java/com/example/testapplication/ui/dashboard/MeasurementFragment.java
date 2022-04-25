@@ -1,6 +1,7 @@
 package com.example.testapplication.ui.dashboard;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,6 +22,10 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.testapplication.R;
 import com.example.testapplication.databinding.FragmentMeasurementBinding;
 import com.example.testapplication.ui.beat_counter.CameraActivity;
+import com.example.testapplication.ui.beat_counter.StatClient;
+
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 public class MeasurementFragment extends Fragment {
 
@@ -28,6 +33,8 @@ public class MeasurementFragment extends Fragment {
     private FragmentMeasurementBinding binding;
 
     private TextView heartBeatIndicator;
+
+    private StatClient statClient;
 
     void resetBeatIndicator() {
         heartBeatIndicator.setText("...");
