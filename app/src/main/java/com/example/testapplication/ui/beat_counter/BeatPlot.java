@@ -70,7 +70,7 @@ public class BeatPlot {
         set.setDrawValues(false);
         set.setDrawCircles(false);
         set.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-        set.setCubicIntensity(0.3f);
+        set.setCubicIntensity(0.01f);
         return set;
     }
 

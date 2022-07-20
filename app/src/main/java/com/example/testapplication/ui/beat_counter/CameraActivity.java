@@ -103,6 +103,8 @@ public class CameraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
+        setTitle("Camera");
+
         Log.d(TAG, "Camera activity was created");
 
         final ToggleButton button = findViewById(R.id.torch_button);
@@ -474,7 +476,19 @@ public class CameraActivity extends AppCompatActivity {
                     finish();
                 } else {
                     pixelData.add(redMean);
-                    beatPlot.addEntry(redMean);
+
+                    int window_size = 5;
+                    if (pixelData.size() > window_size) {
+                        float sum = 0;
+                        for (int i = 0; i < (pixelData.size() - window_size + 1); i++) {
+                            sum = 0;
+                            for (int j = 0; j < window_size; j++) {
+                                sum = (float) (sum + pixelData.get(i + j));
+                            }
+                            sum /= window_size;
+                        }
+                        beatPlot.addEntry(sum);
+                    }
 //                    if (beatPlotSkipValue == 0) {
 //                        beatPlot.addEntry(redMean);
 //                        beatPlotSkipValue++;
